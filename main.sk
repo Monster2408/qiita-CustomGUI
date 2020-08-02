@@ -1,0 +1,63 @@
+Options:
+	GUIName: "&6&lGUI"
+	EmptyName: "&b未開放"
+	
+	ValueHatena: "ewogICJ0aW1lc3RhbXAiIDogMTU5NjM0MTE5MTEwMSwKICAicHJvZmlsZUlkIiA6ICIxYzJiNjk5MWU4Y2U0ZTVkYjRkOGVjM2YwY2RjNWY4ZSIsCiAgInByb2ZpbGVOYW1lIiA6ICJNb25zdGVyMjQwOCIsCiAgInNpZ25hdHVyZVJlcXVpcmVkIiA6IHRydWUsCiAgInRleHR1cmVzIiA6IHsKICAgICJTS0lOIiA6IHsKICAgICAgInVybCIgOiAiaHR0cDovL3RleHR1cmVzLm1pbmVjcmFmdC5uZXQvdGV4dHVyZS9jYjQzMmM2YmVlMDE5OWFkNmYwODYwMmNkZjI3ZGY5YjY2NjllMTUwNjMwNWYzZjQ1OTA1YjViMDQ0NDVmMDQ3IgogICAgfQogIH0KfQ=="
+	SignatureHatena: "DLyg+Xk3z/HfTeK3guPP5ApK1nRx6YSRJC1znWItUprYBG0P5sUMNDHZgwYXIuPsv0uSMOw/0MW4IKMpdw0rZbeZQRBAM+en73wuDRNjWdPYyFAIFyoq+gLHDVMY+UsSWEIaBrFlrZ9SsGfamlb2dAzokeNu0QRc8QpnpdWXC99+tLru6O3wTUYs+aWEAkes6k73JL+ERm3bvgIkfX28Sy3tn3rWf9lHVFZ1epVPdGoJJsqg/OR/vv6OLi5sYLBdi5e/U7vQPOguL8xpj3ctvrNnwQRjhWolKyr7wkVsmVgmnkDJ/EFtWrVw05r20HRZmZUWQiJ5YIvlYbG+Ck6t+AATtbIxijZSwLZyiShJNdfLNjPaE8XbjF8WOpSw2R98uOQNPUnG7+A5AA54Cjap9y1NAVOfO7jabPW4wwe6/ZXuuK/1e8G7ynWrsLrGVW8vmNz2NqAblahY1+GXIH6GVkc3kr8ECycDl417apqlhn+/NfUtq2CPQfmjCvAqxsqQuecm8W+QffK4nM6O5WzCeWqxoYDqHo462afq5ye53BJwZhucwWtRzPn3XYwrV5ETOQNFCUOu7APL59CIL8FBB5aLt2HfQVQDpVS2sYgBWjwfu52nP1GorEsNPHMH0F4g34vIcscIwQJuJwNJ4iUTAXsyXGzlCLx9p0j+CGidhDQ="
+	
+on load:
+	set {GUIName} to {@GUIName}
+	
+	set {skull.hatena} to skull from skin texture with value {@ValueHatena} signature {@SignatureHatena} named {@EmptyName}
+	
+	delete {list::*}
+	loop 1000 times:
+		add stone named "%loop-number%" to {list::*}
+	
+function getGUIPage(p: player) :: number:
+	set {_item} to slot 52 of {_p}'s current inventory
+	set {_sections::*} to name of {_item} split at " "
+	set {_text} to {_sections::2}
+	return {_text} parsed as number
+	
+command /gui:
+	trigger:
+		open chest with 6 rows named "%{GUIName}%" to player
+		loop 45 times:
+			set slot loop-number - 1 of player's current inventory to {skull.hatena}
+			set slot loop-number - 1 of player's current inventory to {list::%loop-number%}
+		set slot 53 of player's current inventory to spectral arrow named "次ページ"
+		set slot 52 of player's current inventory to map named "ページ: 1"
+		set slot 51 of player's current inventory to spectral arrow named "前ページ"
+		
+on inventory click:
+	name of event-inventory is "%{GUIName}%"
+	clicked item is not air
+	clicked item is set
+	if {list::*} contains clicked item:
+		stop
+	cancel event
+	if clicked item is spectral arrow named "次ページ":
+		play "ui_button_click" to player at volume 1
+		set {_page} to getGUIPage(player)
+		set {_n} to {_page} * 45 + 1
+		loop 45 times:
+			set slot loop-number - 1 of player's current inventory to {skull.hatena}
+			set slot loop-number - 1 of player's current inventory to {list::%{_n}%}
+			add 1 to {_n}
+		set slot 52 of player's current inventory to map named "ページ: %{_page} + 1%"
+		stop
+	if clicked item is spectral arrow named "前ページ":
+		play "ui_button_click" to player at volume 1
+		set {_page} to getGUIPage(player)
+		if {_page} > 1:
+			set {_n} to ({_page} - 1) * 45 - 44
+			loop 45 times:
+				set slot loop-number - 1 of player's current inventory to {skull.hatena}
+				set slot loop-number - 1 of player's current inventory to {list::%{_n}%}
+				add 1 to {_n}
+			set slot 52 of player's current inventory to map named "ページ: %{_page} - 1%"
+		else:
+			play "entity_villager_no" to player at volume 1
+		stop
+	play "entity_villager_no" to player at volume 1
